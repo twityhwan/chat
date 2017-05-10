@@ -6,8 +6,17 @@
 #include <cstdlib>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
 
 using namespace std;
+
+#define BUF_LEN 128
+#define MAX_CLIENT 5
+
+int threadNum = 0;
+pthread_t threadArr[MAX_CLIENT];
+
+void *chatTask(void *);
 
 ChatServer::ChatServer() : m_isConnected(false), m_port(1500),
     m_fd(-1)
@@ -20,6 +29,7 @@ ChatServer::ChatServer() : m_isConnected(false), m_port(1500),
 
 ChatServer::~ChatServer()
 {
+    close(m_fd);
 }
 
 void
@@ -38,7 +48,7 @@ ChatServer::start()
         exit(0);
     }
 
-    if (listen(m_fd, 5) < 0) {
+    if (listen(m_fd, MAX_CLIENT) < 0) {
         cout<<"Server: Can't listen connection!"<<endl;
         exit(0);
     }
@@ -48,25 +58,33 @@ ChatServer::start()
     struct sockaddr_in client_addr;
     char buffer[BUF_LEN];
     socklen_t len = sizeof(client_addr);
-    int client_fd;
     char temp[20];
-    int msg_size;
-    while(1) {
-        client_fd = accept(m_fd, (struct sockaddr *)&client_addr, &len);
+
+    while(threadNum < MAX_CLIENT) {
+        int client_fd = accept(m_fd, (struct sockaddr *)&client_addr, &len);
         if (client_fd < 0) {
             cout<<"Server: accept failed!"<<endl;
             exit(0);
         }
+
         inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, temp, sizeof(temp));
         cout<<"Server: "<<temp<<" client connected."<<endl;
-        for(;;) {
-            memset(buffer, 0x00, sizeof(buffer));
-            msg_size = read(client_fd, buffer, 1024);
-            write(client_fd, buffer, msg_size);
-            cout<<buffer<<endl;
-        }
-        close(client_fd);
-        cout<<"Server : "<<temp<<" client closed."<<endl;
+        memset(buffer, 0x00, BUF_LEN);
+        strcpy(buffer, "Server connected...\n");
+        send(client_fd, buffer, BUF_LEN, 0);
+
+        pthread_create(&threadArr[threadNum], NULL, chatTask, (void*)(intptr_t)client_fd);
+        threadNum++;
     }
-    close(m_fd);
+}
+
+void *chatTask(void *data) {
+    char buffer[BUF_LEN];
+    int client_fd = (intptr_t)data;
+    while(1) {
+        memset(buffer, 0x00, BUF_LEN);
+        int msg_size = read(client_fd, buffer, BUF_LEN);
+        write(client_fd, buffer, msg_size);
+        cout<<buffer<<endl;
+    }
 }

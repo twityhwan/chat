@@ -3,8 +3,6 @@
 
 #include <netinet/in.h>
 
-#define BUF_LEN 128
-
 class ChatServer
 {
 public:
