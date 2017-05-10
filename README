@@ -1,0 +1,16 @@
+This is a simple echo server until now.
+
+1. Compile
+$ make clean
+$ make
+
+2. Run server
+$ ./out
+
+3. Connect to server
+3.1 Open a new terminal.
+3.2 Connect to server with port number 1500.
+$ nc [IP] 1500
+ex) nc 127.0.0.1 1500
+
+4. Send message to server. Then, server returns message back.
