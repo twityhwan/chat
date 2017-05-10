@@ -2,7 +2,7 @@ CXX     = g++
 LIBS	= -lpthread
 SRCS    = $(wildcard *.cpp)
 OBJS    = $(SRCS:.cpp=.o)
-TARGET  = out
+TARGET  = server
 
 all : $(TARGET)
 	$(CXX) -o $(TARGET) $(OBJS) $(LIBS)

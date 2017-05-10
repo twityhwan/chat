@@ -6,7 +6,7 @@ $ make clean
 $ make
 
 2. Run server
-$ ./out
+$ ./server
 
 3. Connect to server
 3.1 Open a new terminal.
