@@ -7,6 +7,18 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+static void* readTask(void* data) {
+    char message[1024];
+    int len = 0;
+    int client_fd = *((int*)data);
+
+    while( true) {
+        len = read(client_fd, message, sizeof(message));
+        if(len > 0) printf("> %s\n", message);
+        else if(len < 0) exit(1);
+    }
+}
+
 int main(int argc, char* argv[]) {
     if (argc!=3) {
         printf("usage: %s [IP] [PORT]\n", argv[0]);
@@ -23,12 +35,9 @@ int main(int argc, char* argv[]) {
     }
 
     struct sockaddr_in server_addr;
-    //unsigned int ipaddr = inet_addr(argv[1]);
     memset(&server_addr, 0x00, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(argv[1]);
-    //server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    //server_addr.sin_addr.s_addr = ipaddr;
     server_addr.sin_port = htons(atoi(argv[2]));
 
     if (connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr))
@@ -37,15 +46,25 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
+    char message[1024];
+    int len = read(client_fd, message, sizeof(message)-1);
+    if (len < 1) {
+        printf("Client: Read error!\n");
+        exit(0);
+    }
+
+    printf("Message from server: %s\n", message);
+
+    pthread_t t;
+    pthread_create(&t, NULL, readTask, &client_fd);
+
     while(true) {
-        char message[30];
-        int len = read(client_fd, message, sizeof(message)-1);
-        if (len == -1) {
-            printf("Client: Read error!\n");
-            exit(0);
+        scanf("%s", message);
+        if (strcmp(message, "quit")==0) {
+            printf("Client closed\n");
+            break;
         }
-        message[len] = '\0';
-        printf("Message from server: %s\n", message);
+        write(client_fd, message, strlen(message)+1);
     }
     close(client_fd);
 

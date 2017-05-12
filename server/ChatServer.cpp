@@ -1,22 +1,55 @@
 #include "ChatServer.h"
 #include <string.h>
 #include <iostream>
+#include <vector>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstdlib>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <stdio.h>
 
 using namespace std;
 
 #define BUF_LEN 128
-#define MAX_CLIENT 5
 
-int threadNum = 0;
-pthread_t threadArr[MAX_CLIENT];
+static pthread_mutex_t s_lock = PTHREAD_MUTEX_INITIALIZER;
 
-void *chatTask(void *);
+namespace {
+struct Client {
+    struct sockaddr_in from;
+    int fd;
+};
+}
+
+static vector<Client> s_clients;
+
+static void *chatTask(void *);
+static bool closeClient(int fd) {
+    printf("close client (%d)\n", fd);
+    pthread_mutex_lock(&s_lock);
+    for(vector<Client>::iterator it = s_clients.begin(); it != s_clients.end(); it++) {
+        if(it->fd == fd) {
+            close(fd);
+            s_clients.erase(it);
+            pthread_mutex_unlock(&s_lock);
+            return true;
+        }
+    }
+    pthread_mutex_unlock(&s_lock);
+    return false;
+}
+
+static void broadCast(int fd, const char* buf, int len) {
+    pthread_mutex_lock(&s_lock);
+    for(vector<Client>::iterator it = s_clients.begin();
+            it != s_clients.end(); it++) {
+        if (it->fd == fd) continue;
+        write(it->fd, buf, len);
+    }
+    pthread_mutex_unlock(&s_lock);
+}
 
 ChatServer::ChatServer() : m_isConnected(false), m_port(1500),
     m_fd(-1)
@@ -37,6 +70,8 @@ ChatServer::start()
 {
     if (m_fd == -1) {
         m_fd = socket(AF_INET, SOCK_STREAM, 0);
+        int use = 1;
+        setsockopt(m_fd, SOL_SOCKET, SO_REUSEADDR, (char*)&use, sizeof(int));
         if (m_fd == -1) {
             cout<<"Server: Can't open stream socket!"<<endl;
             exit(0);
@@ -48,7 +83,7 @@ ChatServer::start()
         exit(0);
     }
 
-    if (listen(m_fd, MAX_CLIENT) < 0) {
+    if (listen(m_fd, 10) < 0) {
         cout<<"Server: Can't listen connection!"<<endl;
         exit(0);
     }
@@ -60,7 +95,7 @@ ChatServer::start()
     socklen_t len = sizeof(client_addr);
     char temp[20];
 
-    while(threadNum < MAX_CLIENT) {
+    while(true) {
         int client_fd = accept(m_fd, (struct sockaddr *)&client_addr, &len);
         if (client_fd < 0) {
             cout<<"Server: accept failed!"<<endl;
@@ -73,18 +108,28 @@ ChatServer::start()
         strcpy(buffer, "Server connected...\n");
         send(client_fd, buffer, BUF_LEN, 0);
 
-        pthread_create(&threadArr[threadNum], NULL, chatTask, (void*)(intptr_t)client_fd);
-        threadNum++;
+        Client c;
+        c.fd = client_fd;
+        c.from = client_addr;
+        s_clients.push_back(c);
+        pthread_t t;
+        pthread_create(&t, NULL, chatTask, (void*)&(s_clients.back()));
     }
 }
 
 void *chatTask(void *data) {
     char buffer[BUF_LEN];
-    int client_fd = (intptr_t)data;
+    Client* c = reinterpret_cast<Client*>(data);
+    int client_fd = c->fd;
     while(1) {
         memset(buffer, 0x00, BUF_LEN);
         int msg_size = read(client_fd, buffer, BUF_LEN);
-        write(client_fd, buffer, msg_size);
-        cout<<buffer<<endl;
+        if (msg_size < 0) {
+            break;
+        }
+        if (msg_size == 0) continue;
+        printf("message received from c(%d), msg:%s\n", client_fd, buffer);
+        broadCast(client_fd, buffer, msg_size);
     }
+    closeClient(client_fd);
 }

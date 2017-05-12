@@ -6,7 +6,7 @@ TARGET  = server
 
 all : $(TARGET)
 	$(CXX) -o $(TARGET) $(OBJS) $(LIBS)
-$(TARGET) :
+$(TARGET) : $(SRCS)
 	$(CXX) -c $(SRCS)
 clean :
 	rm -f $(TARGET)
