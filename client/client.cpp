@@ -59,7 +59,8 @@ int main(int argc, char* argv[]) {
     pthread_create(&t, NULL, readTask, &client_fd);
 
     while(true) {
-        scanf("%s", message);
+        fgets(message, sizeof(message), stdin);
+        message[strlen(message)-1] = '\0';
         if (strcmp(message, "quit")==0) {
             printf("Client closed\n");
             break;

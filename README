@@ -22,5 +22,4 @@ $ make
 $ ./client [IP] 1500
 ex) ./client 127.0.0.1 1500
 
-3. Input a word. Then the other clients can get that message.
-(Until Now, string is not handled yet.)
+3. Input message and press `enter`. Then the other clients can get that message.
