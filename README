@@ -1,5 +1,7 @@
-This is a simple echo server until now.
 Server can handle at most 5 clients.
+
+0. Go to `server` directory.
+$ cd server
 
 1. Compile
 $ make clean
