@@ -105,7 +105,7 @@ ChatServer::start()
         inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, temp, sizeof(temp));
         cout<<"Server: "<<temp<<" client connected."<<endl;
         memset(buffer, 0x00, BUF_LEN);
-        strcpy(buffer, "Server connected...\n");
+        strcpy(buffer, "Server connected...");
         send(client_fd, buffer, BUF_LEN, 0);
 
         Client c;
