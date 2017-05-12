@@ -1,19 +1,28 @@
 Server can handle at most 5 clients.
 
+## Server ##
 0. Go to `server` directory.
 $ cd server
 
 1. Compile
-$ make clean
 $ make
 
 2. Run server
 $ ./server
 
-3. Connect to server
-3.1 Open a new terminal.
-3.2 Connect to server with port number 1500.
-$ nc [IP] 1500
-ex) nc 127.0.0.1 1500
+## Client ##
 
-4. Send message to server. Then, server returns message back.
+0. Go to `client` directory.
+$ cd client
+
+1. Compile
+$ make
+
+2. Connect to server
+2.1 Open a new terminal.
+2.2 Connect to server with port number 1500.
+$ ./client [IP] 1500
+ex) ./client 127.0.0.1 1500
+
+3. Input a word. Then the other clients can get that message.
+(Until Now, string is not handled yet.)
