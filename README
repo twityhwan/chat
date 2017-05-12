@@ -1,5 +1,3 @@
-Server can handle at most 5 clients.
-
 ## Server ##
 0. Go to `server` directory.
 $ cd server
