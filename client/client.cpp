@@ -15,7 +15,7 @@ static void* readTask(void* data) {
     while( true) {
         len = read(client_fd, message, sizeof(message));
         if(len > 0) printf("> %s\n", message);
-        else if(len < 0) exit(1);
+        else if(len <= 0) exit(1);
     }
 }
 

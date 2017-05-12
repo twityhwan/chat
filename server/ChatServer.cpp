@@ -124,10 +124,9 @@ void *chatTask(void *data) {
     while(1) {
         memset(buffer, 0x00, BUF_LEN);
         int msg_size = read(client_fd, buffer, BUF_LEN);
-        if (msg_size < 0) {
+        if (msg_size <= 0) {
             break;
         }
-        if (msg_size == 0) continue;
         printf("message received from c(%d), msg:%s\n", client_fd, buffer);
         broadCast(client_fd, buffer, msg_size);
     }
